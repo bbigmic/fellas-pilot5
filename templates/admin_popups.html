@@ -19,6 +19,16 @@
     </ul>
 </p>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="flash-message {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <form action="/admin/add_popup" method="POST" enctype="multipart/form-data" class="form">
     <label for="popup_image">Wgraj zdjęcie:</label>
     <input type="file" id="popup_image" name="popup_image" accept="image/*" required>

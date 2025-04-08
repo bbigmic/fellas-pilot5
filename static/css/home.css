@@ -61,7 +61,7 @@ html, body {
     max-height: 90%;
     overflow: hidden;
     text-align: center;
-    border: 5px solid #81c134;
+    border: 5px solid #E10812;
 }
 
 #popup img {
@@ -88,7 +88,7 @@ html, body {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     z-index: 1001;
     overflow: hidden;
-    background-color: #81c134;
+    background-color: #E10812;
 }
 
 #close-popup #progress-bar {
@@ -237,12 +237,49 @@ html, body {
 
 
 
+.call-us-bg {
+    background-image: url('/static/images/call-us-bg.png'); /* Ścieżka do obrazu */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 50px 0;
+    color: white;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Nowy div dla lepszej czytelności */
+.call-us-content {
+    background-color: rgba(0, 0, 0, 0.6); /* Ciemne, półprzezroczyste tło */
+    padding: 20px;
+    border-radius: 10px;
+    display: inline-block;
+    max-width: 80%;
+}
+
+/* Dostosowanie dla małych ekranów */
+@media (max-width: 768px) {
+    .call-us-content {
+        max-width: 95%;
+        padding: 15px;
+    }
+}
+
+
+/* Responsywność - dla mniejszych ekranów */
+@media (max-width: 768px) {
+    .call-us-bg {
+        background-size: contain; /* Lepsze dopasowanie do małych ekranów */
+        background-size: cover;      /* Rozciągnięcie obrazu na całą sekcję */
+    }
+}
 
 
 /* Sekcja call-us */
 .call-us {
-background: linear-gradient(135deg, #ecf2db, #a8d5ba, #5ca4a9);
-
+    min-height: 800px;
     padding: 50px 0; /* Odstępy u góry i na dole */
     text-align: center; /* Wycentrowanie treści */
     font-family: 'Arial', sans-serif;
@@ -252,13 +289,16 @@ background: linear-gradient(135deg, #ecf2db, #a8d5ba, #5ca4a9);
 .call-us h2 {
     font-size: 2rem;
     font-weight: bold;
-    color: #2c3e50;
+    color: white;
     margin-bottom: 20px;
+    margin-top: 20px;
+    text-decoration: none;
+
 }
 
 .call-us h3 {
     font-size: 1.5rem;
-    color: #555;
+    color: white;
     margin-top: 20px;
 }
 
@@ -270,7 +310,7 @@ background: linear-gradient(135deg, #ecf2db, #a8d5ba, #5ca4a9);
     font-weight: bold;
     text-transform: uppercase;
     text-decoration: none;
-    background-color: #28a745; /* Zielone tło */
+    background-color: #E10812; /* Zielone tło */
     color: #fff; /* Biały tekst */
     border-radius: 5px; /* Zaokrąglone rogi */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Delikatny cień */
@@ -278,7 +318,7 @@ background: linear-gradient(135deg, #ecf2db, #a8d5ba, #5ca4a9);
 }
 
 .call-us .category-link:hover {
-    background-color: #218838; /* Ciemniejsza zieleń na hover */
+    background-color: #E67E22; /* Ciemniejsza zieleń na hover */
     transform: scale(1.05); /* Delikatne powiększenie */
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Większy cień na hover */
 }
@@ -286,7 +326,7 @@ background: linear-gradient(135deg, #ecf2db, #a8d5ba, #5ca4a9);
 /* Responsywność */
 @media (max-width: 992px) {
     .call-us h2 {
-        font-size: 1.8rem;
+        font-size: 3rem;
     }
     .call-us h3 {
         font-size: 1.3rem;

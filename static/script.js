@@ -110,6 +110,8 @@ function submitOrder() {
     }
 }
 
+
+
 function toggleCart() {
     const cart = document.getElementById("cart");
     cart.classList.toggle("show");
@@ -122,7 +124,12 @@ function toggleCart() {
     }
 }
 
-
+    // Funkcja do rozwijania i zwijania kategorii
+    function toggleCategory(button) {
+        button.classList.toggle("active");
+        const panel = button.nextElementSibling;
+        panel.style.display = panel.style.display === "none" ? "block" : "none";
+    }
 
 document.addEventListener("DOMContentLoaded", function () {
     const flashMessages = document.querySelectorAll(".flash-message");

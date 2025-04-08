@@ -7,7 +7,7 @@
 
 /* Styl dla nagłówka */
 .text-page .header {
-    background-color: #ecf2db;
+    background-color: #FFF5E1;
     padding: 50px 0;
 }
 
@@ -26,7 +26,7 @@
 
 .text-page .header strong {
     font-weight: bold;
-    color: #81c134;
+    color: #E10812;
 }
 
 /* Styl dla obrazka */
@@ -47,7 +47,7 @@
 .text-page .header .image-holder img {
     width: 100%; /* Dopasowanie szerokości */
     height: auto; /* Automatyczna wysokość dla zachowania proporcji */
-    max-height: 600px;
+    max-height: 400px;
     object-fit: cover; /* Zapewnia dobre kadrowanie */
     border-radius: 10px;
 }
@@ -55,7 +55,7 @@
 
 /* Sekcja hero */
 .text-page .hero {
-    background-color: #81c134;
+    background-color: #E10812;
     color: #fff;
     font-size: 2.5rem;
     font-weight: bold;

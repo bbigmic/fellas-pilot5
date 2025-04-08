@@ -38,15 +38,11 @@
     <label for="category">Kategoria:</label>
     <select id="category" name="category" required onchange="toggleDisplayDateField()">
 
-        <option value="Przystawki">Przystawki</option>
-        <option value="Śniadania">Śniadania</option>
-        <option value="Kanapki">Kanapki</option>
-        <option value="Zupy">Zupy</option>
-        <option value="Bowle">Bowle</option>
-        <option value="Dania główne">Dania główne</option>
-        <option value="Dania dla dzieci">Dania dla dzieci</option>
-        <option value="Sałatki">Sałatki</option>
-        <option value="Desery">Desery</option>
+        <option value="Burgery">Burgery</option>
+        <option value="Steki">Steki</option>
+        <option value="Żeberka">Żeberka</option>
+        <option value="Dodatki">Dodatki</option>
+        <option value="Sosy">Sosy</option>
         <option value="Napoje ciepłe">Napoje ciepłe</option>
         <option value="Napoje zimne">Napoje zimne</option>
         <option value="Napoje specjalne">Napoje specjalne</option>
@@ -95,15 +91,11 @@
 
                 <label for="category">Zmień kategorię na:</label>
                 <select name="category" required>
-                    <option value="Przystawki" {% if item.category == "Przystawki" %}selected{% endif %}>Przystawki</option>
-                    <option value="Śniadania" {% if item.category == "Śniadania" %}selected{% endif %}>Śniadania</option>
-                    <option value="Kanapki" {% if item.category == "Kanapki" %}selected{% endif %}>Kanapki</option>
-                    <option value="Zupy" {% if item.category == "Zupy" %}selected{% endif %}>Zupy</option>
-                    <option value="Bowle" {% if item.category == "Bowle" %}selected{% endif %}>Bowle</option>
-                    <option value="Dania główne" {% if item.category == "Dania główne" %}selected{% endif %}>Dania główne</option>
-                    <option value="Dania dla dzieci" {% if item.category == "Dania dla dzieci" %}selected{% endif %}>Dania dla dzieci</option>
-                    <option value="Sałatki" {% if item.category == "Sałatki" %}selected{% endif %}>Sałatki</option>
-                    <option value="Desery" {% if item.category == "Desery" %}selected{% endif %}>Desery</option>
+                    <option value="Burgery" {% if item.category == "Burgery" %}selected{% endif %}>Burgery</option>
+                    <option value="Steki" {% if item.category == "Steki" %}selected{% endif %}>Steki</option>
+                    <option value="Żeberka" {% if item.category == "Żeberka" %}selected{% endif %}>Żeberka</option>
+                    <option value="Dodatki" {% if item.category == "Dodatki" %}selected{% endif %}>Dodatki</option>
+                    <option value="Sosy" {% if item.category == "Sosy" %}selected{% endif %}>Sosy</option>
                     <option value="Napoje ciepłe" {% if item.category == "Napoje ciepłe" %}selected{% endif %}>Napoje ciepłe</option>
                     <option value="Napoje zimne" {% if item.category == "Napoje zimne" %}selected{% endif %}>Napoje zimne</option>
                     <option value="Napoje specjalne" {% if item.category == "Napoje specjalne" %}selected{% endif %}>Napoje specjalne</option>

@@ -4,18 +4,34 @@
 
 {% block content %}
 
-    <div id="loading-screen">
-        <dotlottie-player 
-            src="https://lottie.host/f4b75356-5140-45e7-b457-088248399373/yYdDhNv5iu.lottie" 
-            background="transparent" 
-            speed="1" 
-            style="width: 300px; height: 300px" 
-            loop 
-            autoplay>
-        </dotlottie-player>
-    </div>
+{% if table_id %}
+    <h2 style="width:70%;">Składasz zamówienie do stolika nr {{ table_id }}</h2>
+{% else %}
+    <h2 style="width:70%;">Zamawiasz online</h2>
+{% endif %}
 
-<h2 style="width:70%;">Składasz <br>zamówienie <br>do stolika nr {{ table_id }}</h2>
+{% if table_id is none %}
+<div id="delivery-form">
+    <h2>Dane do dostawy</h2>
+    <form id="delivery-details">
+        <label for="name">Imię i nazwisko:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="phone">Numer telefonu:</label>
+        <input type="tel" id="phone" name="phone" pattern="[0-9]{9}" placeholder="Np. 123456789" required>
+
+        <label for="address">Adres dostawy:</label>
+        <input type="text" id="address" name="address" required>
+
+        <label for="postal_code">Kod pocztowy:</label>
+        <input type="text" id="postal_code" name="postal_code" pattern="[0-9]{2}-[0-9]{3}" placeholder="Np. 00-123" required>
+
+        <label for="comments">Uwagi do dostawy (opcjonalnie):</label>
+        <textarea id="comments" name="comments" rows="2"></textarea>
+    </form>
+</div>
+{% endif %}
+
 
 <!-- Przycisk do rozwijania koszyka -->
 <button onclick="toggleCart()" id="cart-toggle-btn">
@@ -125,9 +141,14 @@
                             <label>Uwagi do zamówienia:</label>
                             <input type="text" id="customization-{{ item.id }}" placeholder='(opcjonalnie) np. "bez sosu"'>
                         {% endif %}
-                        <label>
-                            <input type="checkbox" id="takeaway-{{ item.id }}"> Na wynos (+2.35 PLN)
-                        </label>
+                        {% if table_id %}
+                            <label>
+                                <input type="checkbox" id="takeaway-{{ item.id }}"> Na wynos (+2.35 PLN)
+                            </label>
+                        {% else %}
+                            
+                        {% endif %}
+                        
                         <button id="add-to-cart-{{ item.id }}" onclick="addToCart({{ item.id }}, '{{ item.name }}', {{ item.price }}, {{ 'true' if item.contains_alcohol else 'false' }})">Dodaj</button>
                     </div>
                 {% endfor %}
@@ -144,66 +165,17 @@
     <ul id="cart-items"></ul>
     <div class="cart-footer">
         <p>Suma: <span id="cart-total">0</span> PLN</p>
-        <button onclick="submitOrder()">Zamów</button>
+        
+        {% if table_id %}
+            <button onclick="submitOrder()">Zamów</button>
+        {% else %}
+            <button onclick="checkout()">Zamów online i zapłać</button>
+        {% endif %}
     </div>
 </div>
 
 <script src="/static/script.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
 
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Ukrywamy stronę do momentu sprawdzenia lokalizacji
-        document.body.style.display = "none";
-
-        function checkLocation() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        let lat = position.coords.latitude;
-                        let lon = position.coords.longitude;
-
-                        fetch('/check_location', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ latitude: lat, longitude: lon })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (!data.allowed) {
-                                alert("Nie jesteś w restauracji! Strona zostanie odświeżona.");
-                                setTimeout(() => {
-                                    window.location.href = "/";  // Wymuszone odświeżenie strony
-                                }, 3000);
-                            } else {
-                                // Jeśli lokalizacja jest poprawna, pokazujemy stronę
-                                document.body.style.display = "block";
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Błąd sprawdzania lokalizacji:", error);
-                            alert("Wystąpił problem. Strona zostanie odświeżona.");
-                            setTimeout(() => {
-                                window.location.href = "/";
-                            }, 3000);
-                        });
-                    },
-                    function(error) {
-                        alert("Musisz włączyć udostępnianie lokalizacji, aby zobaczyć menu.");
-                        setTimeout(() => {
-                            window.location.href = "/";
-                        }, 3000);
-                    }
-                );
-            } else {
-                alert("Twoja przeglądarka nie obsługuje geolokalizacji.");
-                setTimeout(() => {
-                    window.location.href = "/";
-                }, 3000);
-            }
-        }
-
-        checkLocation();
-    });
-    </script>
 
 {% endblock %}

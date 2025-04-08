@@ -8,6 +8,7 @@ import os
 import pytz
 import qrcode
 import io
+import stripe
 from dotenv import load_dotenv
 from PIL import Image
 from functools import wraps  # Dodaj ten import na początku pliku
@@ -23,6 +24,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.getenv("SECRET_KEY", "defaultsecretkey")
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 app.config['UPLOAD_FOLDER'] = '/var/data/images'
@@ -58,6 +60,7 @@ def logout():
     logout_user()
     flash("Wylogowano", "info")
     return redirect(url_for('admin_panel'))
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -140,7 +143,7 @@ class MenuItem(db.Model):
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    table_id = db.Column(db.Integer, db.ForeignKey('table.id'))
+    table_id = db.Column(db.Integer, db.ForeignKey('table.id'), nullable=True)
     status = db.Column(db.String(50), default='Pending')
     total_price = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -153,6 +156,12 @@ class Order(db.Model):
     tip = db.Column(db.Float, nullable=True)  # Nowe pole na napiwek
     nip = db.Column(db.String(15), nullable=True)  # Nowe pole na NIP
     estimated_completion_time = db.Column(db.DateTime, nullable=True)
+
+    delivery_name = db.Column(db.String(100), nullable=True)
+    delivery_phone = db.Column(db.String(20), nullable=True)
+    delivery_address = db.Column(db.String(255), nullable=True)
+    delivery_postal = db.Column(db.String(20), nullable=True)
+    delivery_comments = db.Column(db.Text, nullable=True)
 
     @staticmethod
     def generate_order_number():
@@ -202,6 +211,163 @@ class Popup(db.Model):
 # def index():
 #     return "Hello, Vercel!"
 
+@app.route('/check_location', methods=['POST'])
+def check_location():
+    data = request.json
+    user_lat = data.get("latitude")
+    user_lon = data.get("longitude")
+
+
+    #dom wir
+    RESTAURANT_LAT = 50.7576195578944
+    RESTAURANT_LON = 19.10046215844812
+
+    #dom ngw
+    # RESTAURANT_LAT = 50.05538783157192
+    # RESTAURANT_LON = 21.467076217640532
+    # Współrzędne restauracji
+    # RESTAURANT_LAT = 50.067694744699786
+    # RESTAURANT_LON = 19.950050897784372
+    MAX_DISTANCE_KM = 0.1  # 100 metrów od restauracji
+
+    def haversine(lat1, lon1, lat2, lon2):
+        from math import radians, sin, cos, sqrt, atan2
+        R = 6371  # promień Ziemi w km
+        dlat = radians(lat2 - lat1)
+        dlon = radians(lon2 - lon1)
+        a = sin(dlat/2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2) ** 2
+        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        return R * c
+
+    distance = haversine(user_lat, user_lon, RESTAURANT_LAT, RESTAURANT_LON)
+    return jsonify({"allowed": distance < MAX_DISTANCE_KM})
+
+
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    try:
+        data = request.json
+        table_id = data.get('table_id')  # Może być None dla dostawy
+        items = data.get('items')
+        delivery_info = data.get('delivery', {})
+
+        if not items or len(items) == 0:
+            return jsonify({"error": "Brak pozycji w zamówieniu"}), 400
+
+        line_items = []
+        total_price = 0
+        order_items_data = []
+
+        for item in items:
+            menu_item = MenuItem.query.get(item['id'])
+            if not menu_item:
+                return jsonify({"error": f"Nieprawidłowy ID menu: {item['id']}"}), 400
+
+            quantity = item['quantity']
+            item_price = int(menu_item.price * 100)  # Stripe wymaga wartości w groszach (int)
+
+            total_price += item_price * quantity
+
+            line_items.append({
+                'price_data': {
+                    'currency': 'pln',
+                    'product_data': {'name': menu_item.name},
+                    'unit_amount': item_price,
+                },
+                'quantity': quantity,
+            })
+
+            order_items_data.append({
+                'menu_item_id': menu_item.id,
+                'quantity': quantity
+            })
+
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=line_items,
+            mode='payment',
+            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('menu_online_order', _external=True),
+            metadata={
+                'table_id': str(table_id) if table_id else "None",
+                'total_price': str(total_price / 100),  # Złotówki
+                'order_items': str(order_items_data),
+                'delivery_name': delivery_info.get('name', ""),
+                'delivery_phone': delivery_info.get('phone', ""),
+                'delivery_address': delivery_info.get('address', ""),
+                'delivery_postal': delivery_info.get('postalCode', ""),
+                'delivery_comments': delivery_info.get('comments', "")
+            }
+        )
+
+        return jsonify({'id': checkout_session.id})
+
+    except Exception as e:
+        print("Błąd Stripe:", str(e))
+        return jsonify(error=str(e)), 500
+
+
+
+
+@app.route('/payment-cancel')
+def payment_cancel():
+    flash("Płatność została anulowana.", "warning")
+    return redirect(url_for('menu_online_order'))  # Możesz zmienić na dowolną stronę
+
+
+
+@app.route('/payment-success')
+def payment_success():
+    try:
+        session_id = request.args.get('session_id')
+        session = stripe.checkout.Session.retrieve(session_id)
+
+        if session.payment_status == 'paid':
+            table_id = session.metadata.get('table_id')
+            total_price = float(session.metadata.get('total_price'))
+            order_items = eval(session.metadata.get('order_items'))
+
+            # Pobieramy dane dostawy
+            delivery_name = session.metadata.get('delivery_name', None)
+            delivery_phone = session.metadata.get('delivery_phone', None)
+            delivery_address = session.metadata.get('delivery_address', None)
+            delivery_postal = session.metadata.get('delivery_postal', None)
+            delivery_comments = session.metadata.get('delivery_comments', None)
+
+            # Tworzymy zamówienie w bazie
+            new_order = Order(
+                table_id=int(table_id) if table_id != "None" else None,
+                status="Pending",
+                total_price=total_price,
+                delivery_name=delivery_name,
+                delivery_phone=delivery_phone,
+                delivery_address=delivery_address,
+                delivery_postal=delivery_postal,
+                delivery_comments=delivery_comments
+            )
+            db.session.add(new_order)
+            db.session.commit()
+
+            for item in order_items:
+                order_item = OrderItem(
+                    order_id=new_order.id,
+                    menu_item_id=item['menu_item_id'],
+                    quantity=item['quantity']
+                )
+                db.session.add(order_item)
+
+            db.session.commit()
+
+            return redirect(url_for('order_status', order_id=new_order.id))
+
+        return "Błąd płatności", 400
+
+    except Exception as e:
+        print("Błąd w payment_success:", str(e))
+        return "Wystąpił błąd.", 500
+
+
+
 @app.route('/')
 def home():
     today = datetime.now().date()
@@ -250,10 +416,12 @@ def add_popup():
 @login_required
 @admin_required
 def admin_add_popup():
+    tables = Table.query.all()
     popup = Popup.query.first()
     return render_template('admin_popups.html', 
                            popup_image=popup.image_filename if popup else None, 
-                           is_active=popup.is_active if popup else False)
+                           is_active=popup.is_active if popup else False,
+                           tables=tables)
 
 @app.route('/popup_image')
 def popup_image():
@@ -280,7 +448,6 @@ def toggle_popup():
     return redirect(url_for('admin_add_popup'))
 
 
-# Widok głównego menu dla klientów
 @app.route('/menu/<int:table_id>')
 def menu(table_id):
     # Pobierz liczbę stolików w bazie danych
@@ -290,7 +457,6 @@ def menu(table_id):
     if table_id < 1 or table_id > total_tables:
         abort(404)  # Zwraca stronę błędu 404, gdy stolik nie istnieje
 
-
     # Aktualna godzina w strefie czasowej UTC+1
     timezone = pytz.timezone('Europe/Warsaw')
     current_time = datetime.now(timezone)
@@ -298,29 +464,54 @@ def menu(table_id):
     categories = {
         "Lunch Dnia": MenuItem.query.filter_by(category="Lunch dnia").all(),
         "Deser Dnia": MenuItem.query.filter_by(category="Deser dnia").all(),
-        "Przystawki": MenuItem.query.filter_by(category="Przystawki").all(),
-        "Śniadania": MenuItem.query.filter_by(category="Śniadania").all(),
-        "Kanapki": MenuItem.query.filter_by(category="Kanapki").all(),
-        "Zupy": MenuItem.query.filter_by(category="Zupy").all(),
-        "Bowle": MenuItem.query.filter_by(category="Bowle").all(),
-        "Dania główne": MenuItem.query.filter_by(category="Dania główne").all(),
-        "Dania dla dzieci": MenuItem.query.filter_by(category="Dania dla dzieci").all(),
-        "Sałatki": MenuItem.query.filter_by(category="Sałatki").all(),
-        "Desery": MenuItem.query.filter_by(category="Desery").all(),
+        "Burgery": MenuItem.query.filter_by(category="Burgery").all(),
+        "Steki": MenuItem.query.filter_by(category="Steki").all(),
+        "Żeberka": MenuItem.query.filter_by(category="Żeberka").all(),
+        "Dodatki": MenuItem.query.filter_by(category="Dodatki").all(),
+        "Sosy": MenuItem.query.filter_by(category="Sosy").all(),
         "Napoje Ciepłe": MenuItem.query.filter_by(category="Napoje ciepłe").all(),
         "Napoje Zimne": MenuItem.query.filter_by(category="Napoje zimne").all(),
         "Napoje Specjalne": MenuItem.query.filter_by(category="Napoje specjalne").all(),
         "Alkohole": MenuItem.query.filter_by(category="Alkohole").all()
     }
+
+    # Jeśli table_id > 0, wymuszamy sprawdzanie geolokalizacji
+    if table_id > 0:
+        return render_template('menu.html', categories=categories, table_id=table_id, current_time=current_time)
+
+    # Jeśli table_id == 0, dostęp do menu bez ograniczeń
     return render_template('menu.html', categories=categories, table_id=table_id, current_time=current_time)
 
+
+@app.route('/menu_online_order')
+def menu_online_order():
+    # Aktualna godzina w strefie czasowej UTC+1
+    timezone = pytz.timezone('Europe/Warsaw')
+    current_time = datetime.now(timezone)
+
+    # Pobranie kategorii menu z bazy danych
+    categories = {
+        "Lunch Dnia": MenuItem.query.filter_by(category="Lunch dnia").all(),
+        "Deser Dnia": MenuItem.query.filter_by(category="Deser dnia").all(),
+        "Burgery": MenuItem.query.filter_by(category="Burgery").all(),
+        "Steki": MenuItem.query.filter_by(category="Steki").all(),
+        "Żeberka": MenuItem.query.filter_by(category="Żeberka").all(),
+        "Dodatki": MenuItem.query.filter_by(category="Dodatki").all(),
+        "Sosy": MenuItem.query.filter_by(category="Sosy").all(),
+        "Napoje Ciepłe": MenuItem.query.filter_by(category="Napoje ciepłe").all(),
+        "Napoje Zimne": MenuItem.query.filter_by(category="Napoje zimne").all(),
+        "Napoje Specjalne": MenuItem.query.filter_by(category="Napoje specjalne").all(),
+        "Alkohole": MenuItem.query.filter_by(category="Alkohole").all()
+    }
+    
+    return render_template('menu_online.html', categories=categories, table_id=None, current_time=current_time)
 
 
 @app.route('/check_new_orders', methods=['GET'])
 def check_new_orders():
     try:
         timezone = pytz.timezone('Europe/Warsaw')
-        new_orders = Order.query.filter_by(status="Pending").all()
+        new_orders = Order.query.filter(Order.status.in_(["Pending", "Accepted", "In Preparation"])).all()
         
         orders = [
             {
@@ -358,12 +549,24 @@ def kitchen_view():
     # Wyświetl widok kuchni
     return render_template('kitchen_view.html')
 
+@app.route('/kitchen/accept_order/<int:order_id>', methods=['POST'])
+def kitchen_accept_order(order_id):
+    order = Order.query.get(order_id)
+    if order and order.status == 'Accepted':
+        order.status = 'In Preparation'
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Order marked as In Preparation'})
+    else:
+        return jsonify({'success': False, 'message': 'Order not found or invalid status'}), 404
+
 
 @app.route('/check_accepted_orders', methods=['GET'])
 def check_accepted_orders():
     try:
         timezone = pytz.timezone('Europe/Warsaw')
-        accepted_orders = Order.query.filter_by(status="Accepted").all()
+
+        # Pobieramy zamówienia zarówno w statusie "Accepted", jak i "In Preparation"
+        accepted_orders = Order.query.filter(Order.status.in_(["Accepted", "In Preparation"])).all()
 
         orders = [
             {
@@ -392,6 +595,7 @@ def check_accepted_orders():
     except Exception as e:
         print(f"Błąd podczas pobierania zamówień: {e}")
         return jsonify({"error": "Wystąpił błąd podczas pobierania zamówień"}), 500
+
 
 
 @app.route('/request_bill/<int:order_id>', methods=['POST'])
@@ -530,18 +734,77 @@ def place_order():
 
 
 
-# Widok statusu zamówienia
 @app.route('/order_status/<int:order_id>')
 def order_status(order_id):
     order = Order.query.get_or_404(order_id)
 
-    if order.estimated_completion_time:
-        remaining_time = order.estimated_completion_time - datetime.utcnow()
-        remaining_seconds = max(0, int(remaining_time.total_seconds()))
-    else:
-        remaining_seconds = None
+    # Domyślnie brak pozostałego czasu
+    remaining_seconds = None
+    order_completed = False
 
-    return render_template('order_status.html', order=order, remaining_seconds=remaining_seconds)
+    if order.status == "Accepted" and order.estimated_completion_time:
+        # Konwersja estimated_completion_time do UTC, jeśli jest offset-naive
+        if order.estimated_completion_time.tzinfo is None:
+            estimated_time_utc = order.estimated_completion_time.replace(tzinfo=pytz.utc)
+        else:
+            estimated_time_utc = order.estimated_completion_time.astimezone(pytz.utc)
+
+        # Pobranie aktualnego czasu w UTC
+        now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+
+        # Obliczenie pozostałego czasu
+        remaining_time = estimated_time_utc - now_utc
+        remaining_seconds = max(0, int(remaining_time.total_seconds()))
+
+        # Jeśli czas już się skończył, zamówienie jest "prawie gotowe"
+        if remaining_seconds == 0:
+            order_completed = True
+
+    return render_template(
+        'order_status.html',
+        order=order,
+        remaining_seconds=remaining_seconds,
+        order_completed=order_completed
+    )
+
+
+
+
+
+@app.route('/check_order_status/<int:order_id>', methods=['GET'])
+def check_order_status(order_id):
+    try:
+        order = Order.query.get(order_id)
+        if not order:
+            return jsonify({"error": "Nie znaleziono zamówienia"}), 404
+
+        remaining_seconds = None
+        order_completed = False
+
+        if order.status == "Accepted" and order.estimated_completion_time:
+            if order.estimated_completion_time.tzinfo is None:
+                estimated_time_utc = order.estimated_completion_time.replace(tzinfo=pytz.utc)
+            else:
+                estimated_time_utc = order.estimated_completion_time.astimezone(pytz.utc)
+
+            now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+            remaining_time = estimated_time_utc - now_utc
+            remaining_seconds = max(0, int(remaining_time.total_seconds()))
+
+            if remaining_seconds == 0:
+                order_completed = True
+
+        return jsonify({
+            "order_id": order.id,
+            "status": order.status,
+            "remaining_seconds": remaining_seconds,
+            "order_completed": order_completed
+        })
+
+    except Exception as e:
+        print(f"Błąd w check_order_status: {e}")
+       
+
 
 
 
@@ -604,7 +867,8 @@ def update_order_status(order_id):
 @admin_required
 def admin_panel():
     menu_items = MenuItem.query.all()
-    return render_template('admin_panel.html', menu_items=menu_items)
+    tables = Table.query.all()
+    return render_template('admin_panel.html', menu_items=menu_items, tables=tables)
 
 
 # Dodawanie nowego dania
@@ -737,6 +1001,7 @@ def add_tables():
 @login_required
 @admin_required
 def add_events():
+    tables = Table.query.all()
     if request.method == 'POST':
         title = request.form['title']
         description = request.form['description']
@@ -769,7 +1034,7 @@ def add_events():
         return redirect(url_for('add_events'))
 
     events = Event.query.order_by(Event.start_date.desc()).all()
-    return render_template('admin_add_events.html', events=events)
+    return render_template('admin_add_events.html', events=events, tables=tables)
 
 @app.route('/delete_event/<int:event_id>', methods=['POST'])
 @login_required
@@ -852,43 +1117,24 @@ def regulamin():
 def polityka_prywatnosci():
     return render_template('cards/polityka-prywatnosci.html')
 
-@app.route('/kategoria/sniadania')
-def sniadania():
-    sniadania_items = MenuItem.query.filter_by(category="Śniadania", available=True).all()
-    kanapki_items = MenuItem.query.filter_by(category="Kanapki", available=True).all()
-    return render_template('kategoria/sniadania.html', menu_items=sniadania_items, kanapki_items=kanapki_items)
+@app.route('/kategoria/steki-i-zeberka')
+def steki_i_zeberka():
+    steki_items = MenuItem.query.filter_by(category="Steki", available=True).all()
+    zeberka_items = MenuItem.query.filter_by(category="Kanapki", available=True).all()
+    return render_template('kategoria/steki-i-zeberka.html', menu_items=steki_items, zeberka_items=zeberka_items)
 
-@app.route('/kategoria/bowle')
-def bowle():
-    bowle_items = MenuItem.query.filter_by(category="Bowle", available=True).all()
-    return render_template('kategoria/bowle.html', menu_items=bowle_items)
+@app.route('/kategoria/burgery')
+def burgery():
+    burgery_items = MenuItem.query.filter_by(category="Burgery", available=True).all()
+    return render_template('kategoria/burgery.html', menu_items=burgery_items)
 
-@app.route('/kategoria/salatki')
-def salatki():
-    salatki_items = MenuItem.query.filter_by(category="Sałatki", available=True).all()
-    return render_template('kategoria/salatki.html', menu_items=salatki_items)
 
-@app.route('/kategoria/dania-gorace')
-def dania_gorace():
-    dania_gorace_items = MenuItem.query.filter_by(category="Dania główne", available=True).all()
-    dania_dla_dzieci_items = MenuItem.query.filter_by(category="Dania dla dzieci", available=True).all()
-    return render_template(
-        'kategoria/dania-gorace.html', 
-        menu_items=dania_gorace_items, 
-        dania_dla_dzieci_items=dania_dla_dzieci_items
-    )
+@app.route('/kategoria/dodatki-i-sosy')
+def dodatki_i_sosy():
+    dodatki_items = MenuItem.query.filter_by(category="Dodatki", available=True).all()
+    sosy_items = MenuItem.query.filter_by(category="Sosy", available=True).all()
+    return render_template('kategoria/dodatki-i-sosy.html', menu_items=dodatki_items, kanapki_items=sosy_items)
 
-@app.route('/kategoria/zupy-desery-przystawki')
-def zupy_desery_przystawki():
-    zupy_items = MenuItem.query.filter_by(category="Zupy", available=True).all()
-    desery_items = MenuItem.query.filter_by(category="Desery", available=True).all()
-    przystawki_items = MenuItem.query.filter_by(category="Przystawki", available=True).all()
-    return render_template(
-        'kategoria/zupy-desery-przystawki.html',
-        zupy_items=zupy_items,
-        desery_items=desery_items,
-        przystawki_items=przystawki_items
-    )
 
 
 @app.route('/kategoria/napoje')

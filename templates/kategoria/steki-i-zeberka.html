@@ -33,20 +33,15 @@
             <div class="container">
                 <div class="row">
                     <div class="col-12 col-lg-6">
-                        <h1 class="pb-3">DZIEŃ DOBRY w CZĘSTOCHOWIE!</h1>
+                        <h1 class="pb-3">🥩 Stek z polędwicy wołowej i rozpływające się żeberka! </h1>
 <!--                         <p>
                             <strong>Restauracja PAPU</strong>
                         </p> -->
                         <p>
-                            Ten moment, kiedy budzicie się rano i Waszym marzeniem jest pyszne śniadanie, a w lodówce pusto lub kiedy na ostatni moment wychodzicie z domu i na szybko chcecie zaopatrzyć się w zdrowe śniadanie do pracy lub szkoły - wtedy jedynym słusznym wyborem jest PAPU.
+                            Zacznij dzień jak prawdziwy drapieżnik! Nasz stek z polędwicy wołowej to danie dla tych, którzy od życia oczekują więcej — idealnie wysmażony, pełen smaku i aromatu.
                         </p>
                         <p>
-                            Miłośników porannych posiłków zapewne nie musimy przekonywać - śniadania potrafią uratować nawet najcięższy ranek, sycą, a do tego dają siłę i energię na cały dzień. 
-                        </p>
-                        <p>
-                            <b>
-                                Jeśli nie macie już ochoty spędzać poranka w kuchni albo chcecie przełamać poranną rutynę, zjedzcie śniadanie w PAPU. 
-                            </b>
+                            A może masz ochotę na soczyste żeberka? Mięso, które samo odchodzi od kości, marynowane w autorskich sosach i powoli pieczone dla uzyskania maksymalnej delikatności. 
                         </p>
                     </div>
                     <div class="col-12 col-lg-6">
@@ -62,7 +57,7 @@
 
         <section>
             <div class="container my-5">
-                <h2 class="text-center">Nasze Śniadania</h2>
+                <h2 class="text-center">Steki</h2>
                 <div class="row">
                     {% for item in menu_items %}
                         <div class="col-md-4 my-3">
@@ -79,9 +74,9 @@
                         </div>
                     {% endfor %}
                 </div>
-                <h2 class="text-center">Kanapki</h2>
+                <h2 class="text-center">Żeberka</h2>
                 <div class="row">
-                    {% for item in kanapki_items %}
+                    {% for item in zeberka_items %}
                         <div class="col-md-4 my-3">
                             <div class="card">
                                 {% if item.image_filename %}

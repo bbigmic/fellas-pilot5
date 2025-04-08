@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cards/cards.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cards/wydarzenia.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 </head>
@@ -25,7 +26,48 @@
     {% include 'navbar.html' %}
 
 
+    <div class="text-page">
+        <section class="header">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 col-lg-6 pb-5">
+                        <h1 class="pb-3">WYDARZENIA W MEAT_FELLAS</h1>
+                        <p>
+                            Chcesz zorganizować własne wydarzenie? Zapraszamy do nas! Z chęcią pomożemy w organizacji i stworzymy niezapomnianą atmosferę dla Ciebie i Twoich gości.
+                        </p>
+                        <p>
+                            W <strong>Meat_Fellas</strong> łączymy miłość do sportu z pasją do dobrego jedzenia. Transmitujemy najważniejsze wydarzenia sportowe, oferując niezapomnianą atmosferę i doskonałe jedzenie, które sprawiają, że każda chwila spędzona z nami jest wyjątkowa.
 
+                        </p>
+                        <p>
+                            ⚽ Mecze piłkarskie
+                            Z nami nie przegapisz żadnego meczu! Oferujemy transmisje najważniejszych wydarzeń piłkarskich na dużych ekranach, w atmosferze, która pozwala poczuć się jak na stadionie.
+                        </p>
+                        <p>
+                            🥊 Gale sportów walki
+                            Dla fanów sportów walki transmitujemy na żywo najlepsze gale, zapewniając doskonałą jakość obrazu oraz wygodę, byś mógł w pełni cieszyć się każdym momentem.
+                        </p>
+                        <p>
+                            🎉 Inne wydarzenia
+                            Regularnie organizujemy transmisje innych ważnych wydarzeń sportowych. Bądź na bieżąco z naszymi propozycjami, aby nie przegapić żadnej okazji!
+                        </p>
+                        <p class="pb-sm-5">
+                            Do zobaczenia na kolejnym wydarzeniu w Meat_Fellas!
+                        </p>
+                    </div>
+                    <div class="col-12 col-lg-6 pb-sm-5">
+                            <div class="image-holder">
+                                <img src="{{ url_for('static', filename='images/imprezy-okolicznosciowe.jpg') }}" alt="Imprezy okolicznościowe">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="hero text-center py-5">
+            „Dobrzy ludzie, dobre jedzenie, dobry czas“
+        </section>
+    </div>
 
 
     {% block content %}

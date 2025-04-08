@@ -1,6 +1,6 @@
 /* Stopka */
 footer {
-    background-color: #545454;
+    background-color: #000;
     color: #fff;
     padding: 40px 0;
 }
@@ -16,7 +16,7 @@ footer ul li {
     margin-bottom: 5px;
 }
 footer ul li a {
-    color: #81c134;
+    color: #E10812;
     text-decoration: none;
 }
 footer ul li a:hover {

@@ -33,12 +33,8 @@
             <div class="container">
                 <div class="row">
                     <div class="col-12 col-lg-6">
-                        <h1 class="pb-3">Zupy</h1>
-                        <p>Tradycyjny rosół, a może lekki chłodnik? Wolisz aksamitne zupy krem, czy może gęste i różnorodne zupy warzywne? Sprawdź nasze propozycje i ciesz się smakiem najlepszych warzyw!</p>
-                        <h1 class="pb-3">Desery</h1>
-                        <p>Chyba każdy z nas ma swój ulubiony deser. To może być beza z lokalnej cukierni, szarlotka mamy lub truskawki z przydomowego ogródka okraszone bitą śmietaną. Jednak nic nie stoi na przeszkodzie, by chociaż spróbować deserów w PAPU. </p>
-                        <p>Nasze desery to przede wszystkim wyśmienite puszyste torty biszkoptowe i bezowe, desery ze świeżymi owocami, sernik domowy, jabłecznik jak również przepyszne lody. </p>
-                        <p>Każdy z nas miewa ochotę na coś słodkiego. Owocowe lody, aromatyczne ciasta, kruche tarty i inne smakołyki potrafią kusić naprawdę skutecznie.</p>
+                        <h1 class="pb-3">🍟 Dodatki, które podkręcają smak</h1>
+                        <p>Nie ma uczty bez dodatków! Chrupiące frytki, aksamitne sosy, świeże sałatki — wszystko, czego potrzebujesz, by dopełnić mięsne danie i zadowolić swoje kubki smakowe.</p>
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="image-holder" style="background-image: url('/static/images/zupy.jpg')"></div>
@@ -53,9 +49,9 @@
 
         <section class="category-section">
             <div class="container my-5">
-                <h2 class="text-center">Zupy</h2>
+                <h2 class="text-center">Dodatki</h2>
                 <div class="row">
-                    {% for item in zupy_items %}
+                    {% for item in menu_items %}
                         <div class="col-md-4 my-3">
                             <div class="card">
                                 {% if item.image_filename %}
@@ -75,9 +71,9 @@
 
         <section class="category-section">
             <div class="container my-5">
-                <h2 class="text-center">Desery</h2>
+                <h2 class="text-center">Sosy</h2>
                 <div class="row">
-                    {% for item in desery_items %}
+                    {% for item in sosy_items %}
                         <div class="col-md-4 my-3">
                             <div class="card">
                                 {% if item.image_filename %}

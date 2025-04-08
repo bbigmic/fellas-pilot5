@@ -9,23 +9,51 @@
     <!-- Dynamicznie ładowane zamówienia ze statusem "Accepted" -->
 </div>
 
-<script>
-    function fetchAcceptedOrders() {
-        fetch('/check_accepted_orders')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Błąd serwera: ${response.status} - ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(orders => {
-                const ordersDiv = document.getElementById("accepted-orders");
-                ordersDiv.innerHTML = ""; // Wyczyść poprzednie zamówienia
+<audio id="kitchenOrderSound" src="{{ url_for('static', filename='sounds/kitchen_sound.wav') }}" preload="auto"></audio>
 
-                orders.forEach(order => {
+<script>
+    const displayedKitchenOrders = new Set();
+
+function fetchAcceptedOrders() {
+    fetch('/check_accepted_orders')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Błąd serwera: ${response.status} - ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(orders => {
+            const ordersDiv = document.getElementById("accepted-orders");
+
+            // 1. Zapisujemy aktualne order IDs z backendu
+            const currentOrderIds = orders.map(order => order.order_id);
+
+            // 2. Usuwamy z DOM zamówienia, których już nie ma
+            const existingOrderDivs = ordersDiv.querySelectorAll(".order");
+            existingOrderDivs.forEach(orderDiv => {
+                const orderId = parseInt(orderDiv.id.replace("order-", ""));
+                if (!currentOrderIds.includes(orderId)) {
+                    orderDiv.remove();
+                }
+            });
+
+            // 3. Dodajemy nowe zamówienia (tak jak wcześniej)
+            orders.forEach(order => {
+                if (!document.getElementById(`order-${order.order_id}`)) {
                     const orderDiv = document.createElement("div");
                     orderDiv.classList.add("order");
                     orderDiv.id = `order-${order.order_id}`;
+                    orderDiv.style.cursor = 'pointer'; // Dodajemy kursor wskazujący kliknięcie
+
+                    // Dodajemy obsługę kliknięcia
+                    orderDiv.addEventListener('click', () => markOrderInPreparation(order.order_id));
+                    
+                    // Dodajemy kolor w zależności od statusu
+                    if (order.status === "In Preparation") {
+                        orderDiv.style.backgroundColor = '#fff3cd'; // jasno żółte dla przyjętego do kuchni
+                    } else if (order.status === "Accepted") {
+                        orderDiv.style.backgroundColor = ''; // standardowy kolor (domyślny)
+                    }
 
                     orderDiv.innerHTML = `
                         <h2>Zamówienie nr ${order.order_number} - Stolik nr ${order.table_id}</h2>
@@ -44,10 +72,41 @@
                         </ul>
                     `;
                     ordersDiv.appendChild(orderDiv);
-                });
-            })
-            .catch(error => console.error("Błąd przy pobieraniu zamówień:", error));
-    }
+
+                    // 🎵 Dźwięk dla nowego zamówienia
+                    const audio = document.getElementById('kitchenOrderSound');
+                    if (audio) {
+                        audio.play().catch(error => console.log("Audio play error:", error));
+                    }
+                }
+            });
+        })
+        .catch(error => console.error("Błąd przy pobieraniu zamówień:", error));
+}
+
+
+function markOrderInPreparation(orderId) {
+    fetch(`/kitchen/accept_order/${orderId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const orderDiv = document.getElementById(`order-${orderId}`);
+                if (orderDiv) {
+                    orderDiv.style.backgroundColor = '#fff3cd'; // Jasno żółte tło
+                    const statusElement = orderDiv.querySelector('p');
+                    if (statusElement) {
+                        statusElement.innerHTML = `Status: In Preparation <a> id: ${orderId}</a>`;
+                    }
+                }
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => console.error('Błąd podczas aktualizacji statusu:', error));
+}
+
+
+
 
     // Odświeżanie listy zamówień co kilka sekund
     setInterval(fetchAcceptedOrders, 5000);

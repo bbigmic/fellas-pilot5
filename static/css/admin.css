@@ -5,6 +5,62 @@ body {
     background-color: #f4f4f4;
 }
 
+.order-toggle-btn {
+    background-color: #E10812;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-size: 1rem;
+    margin: 0 !important;
+    transition: background-color 0.3s;
+    border-radius: 5px;
+}
+
+.order-toggle-btn:hover {
+    background-color: #E67E22;
+}
+
+.order-dropdown {
+    display: none;
+
+    list-style-type: none;
+    padding: 0;
+    margin: 0 !important;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.order-dropdown li {
+    border-bottom: 1px solid #ddd;
+}
+
+.order-dropdown li a {
+    display: block;
+    padding: 10px;
+    text-decoration: none;
+    color: #333;
+}
+
+.order-dropdown li a:hover {
+    background-color: #ddd;
+}
+
+
+/* Animacja strzałki */
+.arrow {
+    transition: transform 0.3s ease-in-out;
+    display: inline-block; /* Zapewnia poprawne obracanie */
+}
+
+.arrow.open {
+    transform: rotate(90deg);
+}
+
+
+
 .edit-form {
     background: #fff;
     padding: 1rem;
@@ -84,7 +140,7 @@ body {
 button {
     padding: 5px 10px;
     margin-top: 10px;
-    background-color: #28a745;
+    background-color: #E10812;
     color: white;
     border: none;
     cursor: pointer;
@@ -93,7 +149,7 @@ button {
 }
 
 button:hover {
-    background-color: #81c134;
+    background-color: #E67E22;
 }
 
 

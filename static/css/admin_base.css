@@ -5,9 +5,11 @@ body {
     background-color: #f4f4f4;
 }
 
+
+
 .uls {
     position:fixed;
-    padding-top: 30px;
+
 }
 
 .admin-container {
@@ -32,8 +34,7 @@ body {
 .sidebar-item a {
     display: block;        /* Rozciąga element <a> na cały <li> */
     padding: 10px;         /* Wewnętrzny odstęp */
-    background-color: #444; /* Tło pasujące do stylu sidebaru */
-    color: #fff;           /* Kolor tekstu linku */
+    color: #333333;           /* Kolor tekstu linku */
     text-decoration: none; /* Usunięcie podkreślenia */
     font-size: 1.1em;      /* Rozmiar tekstu */
     font-weight: normal;   /* Domyślna waga czcionki */
@@ -41,29 +42,36 @@ body {
 
 }
 
-.sidebar-item a:hover {
+.sidebar-item-enabled a:hover {
     /*font-weight: bold;      Pogrubienie czcionki przy najechaniu */
-    background-color: #555; /* Zmiana koloru tła przy najechaniu */
+    background-color: #E67E22; /* Zmiana koloru tła przy najechaniu */
 
     cursor: pointer;
 }
 
-.sidebar-item:hover {
-    background-color: #555; /* Zmiana koloru tła przy najechaniu */
-    cursor: pointer;
-        border: 1px solid #ddd; /* Kolor i styl obramowania */
 
+
+.sidebar-item-enabled{
+    background-color: #E10812;
 }
 
-.sidebar-item.active {
+.sidebar-item-enabled.active {
     border: 2px solid #ddd; /* Jasne niebieskie obramowanie */
+   /* Opcjonalnie ciemniejsze tło */
+}
+
+.sidebar-item-disabled {
     background-color: #333;    /* Opcjonalnie ciemniejsze tło */
 }
 
+.sidebar-item-disabled:hover {
+
+    cursor: default;  
+}
 
 .sidebar {
     width: 250px;
-    background-color: #333;
+    background-color: #000;
     color: #fff;
     padding: 20px;
     transition: width 0.3s ease;
@@ -81,13 +89,13 @@ body {
 
 .toggle-sidebar{
     z-index: 1050;
-    background-color: #444 !important;
+    background-color: #E10812 !important;
 }
 
 .toggle-sidebar:hover {
-    background-color: #555 !important; /* Zmiana koloru tła przy najechaniu */
+    background-color: #E67E22 !important; /* Zmiana koloru tła przy najechaniu */
     cursor: pointer;
-    border: 1px solid #ddd !important; /* Kolor i styl obramowania */
+    /* border: 1px solid #ddd !important;  Kolor i styl obramowania */
 }
 
 .sidebar .toggle-sidebar {
@@ -129,7 +137,7 @@ body {
 }
 
 .sidebar ul li {
-    margin: 15px 0;
+    margin: 8px 0;
 }
 
 .sidebar ul li a {
@@ -194,13 +202,13 @@ body {
     margin-left:160px;
     text-decoration: none;
     padding: 8px 12px;
-    background-color: #007bff;
+    background-color: #E10812;
     color: white;
     border-radius: 5px;
 }
 
 .menu-container a:hover {
-    background-color: #0056b3;
+    background-color: #E67E22;
 }
 
 
@@ -208,6 +216,6 @@ body {
     flex: 1;
     padding: 20px;
     padding-top: 50px;
-    background-color: #fff;
+    background-color: #F8F1E5;
     z-index: 1049;
 }
