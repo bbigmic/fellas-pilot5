@@ -27,7 +27,7 @@ app.secret_key = os.getenv("SECRET_KEY", "defaultsecretkey")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-app.config['UPLOAD_FOLDER'] = '/var/data/images'
+app.config['UPLOAD_FOLDER'] = '/var/data/fellas-images'
 
 
 login_manager = LoginManager()
