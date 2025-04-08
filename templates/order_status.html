@@ -62,15 +62,14 @@
     <p id="status-message" class="timer">
         {% if order.status == 'Pending' %}
             Oczekiwanie na akceptację
-        {% elif remaining_seconds is not none and remaining_seconds > 0 %}
+        {% elif order.status in ['Accepted', 'In Preparation'] and remaining_seconds is not none and remaining_seconds > 0 %}
             Przybliżony czas realizacji: <span id="time-remaining">{{ (remaining_seconds // 60) | round }}</span>
         {% elif order_completed %}
             Zamówienie prawie gotowe!
         {% endif %}
     </p>
 
-    <div id="spinner" class="spinner" style="display: {% if order.status == 'Accepted' and remaining_seconds > 0 %}block{% else %}none{% endif %};"></div>
-
+    <div id="spinner" class="spinner" style="display: {% if order.status in ['Accepted', 'In Preparation'] and remaining_seconds is not none and remaining_seconds > 0 %}block{% else %}none{% endif %};"></div>
 
 
     <h3>Szczegóły zamówienia:</h3>
@@ -105,25 +104,26 @@
 </div>
 
 <script>
-    let remainingTime = {{ remaining_seconds or 0 }};
-    const timerDisplay = document.getElementById("time-remaining");
-    const spinner = document.getElementById("spinner");
+let remainingTime = {{ remaining_seconds or 0 }};
+const timerDisplay = document.getElementById("time-remaining");
+const spinner = document.getElementById("spinner");
 
-    function updateTimer() {
-        if (remainingTime <= 0) {
+function updateTimer() {
+    if (remainingTime <= 0) {
+        if (timerDisplay) {
             timerDisplay.innerText = "Zamówienie gotowe!";
-            spinner.style.display = 'none';
-        } else {
-            const minutes = Math.floor(remainingTime / 60);
-            timerDisplay.innerText = `${minutes.toString().padStart(2, '0')} minut`;
-            remainingTime--;
-            setTimeout(updateTimer, 1000);
         }
+        spinner.style.display = 'none';
+    } else {
+        const minutes = Math.floor(remainingTime / 60);
+        const seconds = remainingTime % 60;
+        if (timerDisplay) {
+            timerDisplay.innerText = `${minutes.toString().padStart(2, '0')} minut ${seconds.toString().padStart(2, '0')} sekund`;
+        }
+        remainingTime--;
+        setTimeout(updateTimer, 1000);
     }
-
-    if (remainingTime > 0) {
-        updateTimer();
-    }
+}
 
 
     // Funkcja wezwania kelnera
@@ -201,7 +201,7 @@ function updateOrderStatus(orderId) {
             if (data.status === "Pending") {
                 statusMessage.innerHTML = "Oczekiwanie na akceptację";
                 spinner.style.display = "block";
-            } else if (data.remaining_seconds !== null && data.remaining_seconds > 0) {
+            } else if ((data.status === "Accepted" || data.status === "In Preparation") && data.remaining_seconds !== null && data.remaining_seconds > 0) {
                 // Przeliczenie sekund na format mm:ss
                 const minutes = Math.floor(data.remaining_seconds / 60);
                 const formattedTime = `${minutes.toString().padStart(2, '0')} minut`;

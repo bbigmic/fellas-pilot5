@@ -511,7 +511,8 @@ def menu_online_order():
 def check_new_orders():
     try:
         timezone = pytz.timezone('Europe/Warsaw')
-        new_orders = Order.query.filter(Order.status.in_(["Pending", "Accepted", "In Preparation"])).all()
+        active_statuses = ["Pending", "Accepted", "In Preparation", "Ready"]
+        active_orders = Order.query.filter(Order.status.in_(active_statuses)).all()
         
         orders = [
             {
@@ -532,7 +533,7 @@ def check_new_orders():
                     for item in order.order_items
                 ]
             }
-            for order in new_orders
+            for order in active_orders
         ]
         
         print(f"Przetworzone zamówienia: {orders}")  # Dodatkowe logowanie do debugowania
@@ -556,6 +557,16 @@ def kitchen_accept_order(order_id):
         order.status = 'In Preparation'
         db.session.commit()
         return jsonify({'success': True, 'message': 'Order marked as In Preparation'})
+    else:
+        return jsonify({'success': False, 'message': 'Order not found or invalid status'}), 404
+
+@app.route('/kitchen/complete_order/<int:order_id>', methods=['POST'])
+def kitchen_complete_order(order_id):
+    order = Order.query.get(order_id)
+    if order and order.status == 'In Preparation':
+        order.status = 'Ready'
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Order marked as Ready'})
     else:
         return jsonify({'success': False, 'message': 'Order not found or invalid status'}), 404
 
@@ -781,7 +792,7 @@ def check_order_status(order_id):
         remaining_seconds = None
         order_completed = False
 
-        if order.status == "Accepted" and order.estimated_completion_time:
+        if order.status in ["Accepted", "In Preparation"] and order.estimated_completion_time:
             if order.estimated_completion_time.tzinfo is None:
                 estimated_time_utc = order.estimated_completion_time.replace(tzinfo=pytz.utc)
             else:

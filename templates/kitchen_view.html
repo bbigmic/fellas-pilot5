@@ -14,6 +14,31 @@
 <script>
     const displayedKitchenOrders = new Set();
 
+function generateOrderHTML(order) {
+    return `
+        <h2>Zamówienie nr ${order.order_number} - Stolik nr ${order.table_id}</h2>
+        <p>Status: ${order.status} <a> id: ${order.order_id}</a></p>
+        <p>Łączna cena: ${order.total_price} PLN</p>
+        <p>Godzina zamówienia: ${order.order_time}</p>
+        <h3>Szczegóły zamówienia:</h3>
+        <ul>
+            ${order.items.map(item => `
+                <li>
+                    ${item.name} - Ilość: ${item.quantity} - Cena: ${item.price} PLN
+                    ${item.takeaway ? `<strong>[Na wynos]</strong>` : ""}
+                    ${item.customization ? `<br><em>Personalizacja: ${item.customization}</em>` : ""} <hr>
+                </li>
+            `).join("")}
+        </ul>
+        ${order.status === "In Preparation" ? `
+            <button onclick="markOrderAsReady(${order.order_id})" class="status-btn-secondary">
+                Gotowe
+            </button>
+        ` : ""}
+    `;
+}
+
+
 function fetchAcceptedOrders() {
     fetch('/check_accepted_orders')
         .then(response => {
@@ -37,40 +62,27 @@ function fetchAcceptedOrders() {
                 }
             });
 
-            // 3. Dodajemy nowe zamówienia (tak jak wcześniej)
+            // 3. Przechodzimy po zamówieniach z backendu
             orders.forEach(order => {
-                if (!document.getElementById(`order-${order.order_id}`)) {
+                const existingOrderDiv = document.getElementById(`order-${order.order_id}`);
+
+                if (!existingOrderDiv) {
+                    // 🔵 Zamówienie nie istnieje, tworzymy nowe
                     const orderDiv = document.createElement("div");
                     orderDiv.classList.add("order");
                     orderDiv.id = `order-${order.order_id}`;
-                    orderDiv.style.cursor = 'pointer'; // Dodajemy kursor wskazujący kliknięcie
+                    orderDiv.style.cursor = 'pointer';
 
-                    // Dodajemy obsługę kliknięcia
                     orderDiv.addEventListener('click', () => markOrderInPreparation(order.order_id));
-                    
-                    // Dodajemy kolor w zależności od statusu
+
+                    // Styl zależnie od statusu
                     if (order.status === "In Preparation") {
-                        orderDiv.style.backgroundColor = '#fff3cd'; // jasno żółte dla przyjętego do kuchni
-                    } else if (order.status === "Accepted") {
-                        orderDiv.style.backgroundColor = ''; // standardowy kolor (domyślny)
+                        orderDiv.style.backgroundColor = '#fff3cd';
+                    } else {
+                        orderDiv.style.backgroundColor = '';
                     }
 
-                    orderDiv.innerHTML = `
-                        <h2>Zamówienie nr ${order.order_number} - Stolik nr ${order.table_id}</h2>
-                        <p>Status: ${order.status} <a> id: ${order.order_id}</a></p>
-                        <p>Łączna cena: ${order.total_price} PLN</p>
-                        <p>Godzina zamówienia: ${order.order_time}</p>
-                        <h3>Szczegóły zamówienia:</h3>
-                        <ul>
-                            ${order.items.map(item => `
-                                <li>
-                                    ${item.name} - Ilość: ${item.quantity} - Cena: ${item.price} PLN
-                                    ${item.takeaway ? `<strong>[Na wynos]</strong>` : ""}
-                                    ${item.customization ? `<br><em>Personalizacja: ${item.customization}</em>` : ""} <hr>
-                                </li>
-                            `).join("")}
-                        </ul>
-                    `;
+                    orderDiv.innerHTML = generateOrderHTML(order);
                     ordersDiv.appendChild(orderDiv);
 
                     // 🎵 Dźwięk dla nowego zamówienia
@@ -78,6 +90,22 @@ function fetchAcceptedOrders() {
                     if (audio) {
                         audio.play().catch(error => console.log("Audio play error:", error));
                     }
+
+                } else {
+                    // 🟢 Zamówienie już istnieje, AKTUALIZUJEMY jego zawartość
+
+                    // Styl zależnie od statusu
+                    if (order.status === "In Preparation") {
+                        existingOrderDiv.style.backgroundColor = '#fff3cd';
+                    } else {
+                        existingOrderDiv.style.backgroundColor = '';
+                    }
+
+                    // Aktualizujemy treść
+                    existingOrderDiv.innerHTML = generateOrderHTML(order);
+
+                    // Dodajemy ponownie nasłuch kliknięcia (bo nadpisaliśmy innerHTML)
+                    existingOrderDiv.addEventListener('click', () => markOrderInPreparation(order.order_id));
                 }
             });
         })
@@ -85,26 +113,50 @@ function fetchAcceptedOrders() {
 }
 
 
-function markOrderInPreparation(orderId) {
-    fetch(`/kitchen/accept_order/${orderId}`, { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const orderDiv = document.getElementById(`order-${orderId}`);
-                if (orderDiv) {
-                    orderDiv.style.backgroundColor = '#fff3cd'; // Jasno żółte tło
-                    const statusElement = orderDiv.querySelector('p');
-                    if (statusElement) {
-                        statusElement.innerHTML = `Status: In Preparation <a> id: ${orderId}</a>`;
-                    }
-                }
-            } else {
-                console.error(data.message);
-            }
-        })
-        .catch(error => console.error('Błąd podczas aktualizacji statusu:', error));
-}
 
+    function markOrderInPreparation(orderId) {
+        fetch(`/kitchen/accept_order/${orderId}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const orderDiv = document.getElementById(`order-${orderId}`);
+                    if (orderDiv) {
+                        orderDiv.style.backgroundColor = '#fff3cd'; // Jasno żółte tło
+                        const statusElement = orderDiv.querySelector('p');
+                        if (statusElement) {
+                            statusElement.innerHTML = `Status: In Preparation <a> id: ${orderId}</a>`;
+                        }
+                    }
+                } else {
+                    console.error(data.message);
+                }
+            })
+            .catch(error => console.error('Błąd podczas aktualizacji statusu:', error));
+    }
+
+    function markOrderAsReady(orderId) {
+        // Od razu usuwamy przycisk z DOM
+        const orderDiv = document.getElementById(`order-${orderId}`);
+        if (orderDiv) {
+            const readyButton = orderDiv.querySelector('.status-btn-secondary');
+            if (readyButton) {
+                readyButton.remove();
+            }
+        }
+
+        // Wysyłamy żądanie do backendu
+        fetch(`/kitchen/complete_order/${orderId}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(`Zamówienie ${orderId} oznaczone jako Gotowe.`);
+                    // Zamówienie zniknie automatycznie przy kolejnym fetchu
+                } else {
+                    console.error(data.message);
+                }
+            })
+            .catch(error => console.error('Błąd podczas oznaczania zamówienia jako Gotowe:', error));
+    }
 
 
 
