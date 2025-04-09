@@ -355,12 +355,15 @@
     checkForNewCalls();
     updateOrders();
 
-    document.querySelectorAll('.accept-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            const orderId = button.getAttribute('data-order-id');
-            acceptOrder(orderId);
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll('.accept-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const orderId = button.getAttribute('data-order-id');
+                acceptOrder(orderId);
+            });
         });
     });
+
 
 </script>
 {% endblock %}
