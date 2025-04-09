@@ -102,6 +102,33 @@
 
     const displayedNotifications = new Set();
 
+function acceptOrder(orderId) {
+    const realizationTimeInput = document.getElementById(`realization-time-${orderId}`);
+    const realizationTime = parseInt(realizationTimeInput.value);
+
+    if (!realizationTime || realizationTime <= 0) {
+        alert("Proszę wprowadzić poprawny czas realizacji w minutach.");
+        return;
+    }
+
+    fetch(`/accept_order/${orderId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ realization_time: realizationTime })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const actionDiv = document.getElementById(`order-action-${orderId}`);
+            if (actionDiv) {
+                actionDiv.innerHTML = ``;
+            }
+        } else {
+            alert(data.message || "Wystąpił błąd przy aktualizacji zamówienia.");
+        }
+    })
+    .catch(error => console.error("Błąd przy akceptacji zamówienia:", error));
+}
 
 function generateOrderHTML(order) {
     let buttonHTML = "";
@@ -303,36 +330,6 @@ function updateOrders() {
         .catch(error => console.error("Błąd przy pobieraniu zamówień:", error));
 }
 
-
-
-
-function acceptOrder(orderId) {
-    const realizationTimeInput = document.getElementById(`realization-time-${orderId}`);
-    const realizationTime = parseInt(realizationTimeInput.value);
-
-    if (!realizationTime || realizationTime <= 0) {
-        alert("Proszę wprowadzić poprawny czas realizacji w minutach.");
-        return;
-    }
-
-    fetch(`/accept_order/${orderId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ realization_time: realizationTime })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            const actionDiv = document.getElementById(`order-action-${orderId}`);
-            if (actionDiv) {
-                actionDiv.innerHTML = ``;
-            }
-        } else {
-            alert(data.message || "Wystąpił błąd przy aktualizacji zamówienia.");
-        }
-    })
-    .catch(error => console.error("Błąd przy akceptacji zamówienia:", error));
-}
 
 
 
