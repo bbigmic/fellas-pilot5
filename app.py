@@ -219,12 +219,12 @@ def check_location():
 
 
     #dom wir
-    RESTAURANT_LAT = 50.7576195578944
-    RESTAURANT_LON = 19.10046215844812
+    # RESTAURANT_LAT = 50.7576195578944
+    # RESTAURANT_LON = 19.10046215844812
 
     #dom ngw
-    # RESTAURANT_LAT = 50.05538783157192
-    # RESTAURANT_LON = 21.467076217640532
+    RESTAURANT_LAT = 50.05538783157192
+    RESTAURANT_LON = 21.467076217640532
     # Współrzędne restauracji
     # RESTAURANT_LAT = 50.067694744699786
     # RESTAURANT_LON = 19.950050897784372
@@ -446,6 +446,12 @@ def toggle_popup():
     else:
         flash('Brak pop-upu do zmiany stanu.', 'danger')
     return redirect(url_for('admin_add_popup'))
+
+@app.route('/choose_order_type')
+def choose_order_type():
+    tables = Table.query.all()
+    return render_template('choose_order_type.html', tables=tables)
+
 
 
 @app.route('/menu/<int:table_id>')

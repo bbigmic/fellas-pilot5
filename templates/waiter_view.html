@@ -323,15 +323,17 @@ function acceptOrder(orderId) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            
             const actionDiv = document.getElementById(`order-action-${orderId}`);
-            actionDiv.innerHTML = ``;
+            if (actionDiv) {
+                actionDiv.innerHTML = ``;
+            }
         } else {
             alert(data.message || "Wystąpił błąd przy aktualizacji zamówienia.");
         }
     })
     .catch(error => console.error("Błąd przy akceptacji zamówienia:", error));
 }
+
 
 
 

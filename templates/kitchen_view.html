@@ -73,7 +73,13 @@ function fetchAcceptedOrders() {
                     orderDiv.id = `order-${order.order_id}`;
                     orderDiv.style.cursor = 'pointer';
 
-                    orderDiv.addEventListener('click', () => markOrderInPreparation(order.order_id));
+                    orderDiv.addEventListener('click', () => {
+                        const statusElement = orderDiv.querySelector('p');
+                        if (statusElement && statusElement.textContent.includes('Accepted')) {
+                            markOrderInPreparation(order.order_id);
+                        }
+                    });
+
 
                     // Styl zależnie od statusu
                     if (order.status === "In Preparation") {
