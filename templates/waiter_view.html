@@ -53,7 +53,7 @@
                 {% if order.status == "Pending" %}
                     <label for="realization-time-{{ order.id }}">Wpisz czas realizacji (minuty):</label>
                     <input type="number" id="realization-time-{{ order.id }}" min="1" placeholder="np. 15">
-                    <button onclick="acceptOrder({{ order.id }})" class="status-btn">Przyjmij zamówienie</button>
+                    <button class="status-btn accept-btn" data-order-id="{{ order.id }}">Przyjmij zamówienie</button>
 <!--                 {% elif order.status == "Accepted" %}
                     <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
                         <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion({{ order.id }})">Zamówienie zrealizowane</button>
@@ -163,7 +163,7 @@
                             buttonHTML = `
                                 <label for="realization-time-${order.order_id}">Wpisz czas realizacji (minuty):</label>
                                 <input type="number" id="realization-time-${order.order_id}" min="1" placeholder="np. 15">
-                                <button onclick="acceptOrder(${order.order_id})" class="status-btn">Przyjmij zamówienie</button>
+                                <button class="status-btn accept-btn" data-order-id="${order.order_id}">Przyjmij zamówienie</button>
                             `;
                         } else if (order.status === "Ready") {
                             buttonHTML = `
@@ -332,25 +332,16 @@
 
 
 
-function confirmOrderCompletion(orderId) {
-    const confirmation = confirm("Czy na pewno chcesz oznaczyć zamówienie jako zrealizowane?");
-    if (confirmation) {
-        // Wysyłamy formularz poprzez POST do serwera
-        fetch(`/update_order_status/${orderId}`, {
-            method: "POST"
-        })
-        .catch(error => console.error("Błąd:", error));
+    function confirmOrderCompletion(orderId) {
+        const confirmation = confirm("Czy na pewno chcesz oznaczyć zamówienie jako zrealizowane?");
+        if (confirmation) {
+            // Wysyłamy formularz poprzez POST do serwera
+            fetch(`/update_order_status/${orderId}`, {
+                method: "POST"
+            })
+            .catch(error => console.error("Błąd:", error));
+        }
     }
-}
-
-
-
-
-
-
-
-
-
 
 
 
@@ -363,5 +354,13 @@ function confirmOrderCompletion(orderId) {
     // Inicjalizacja powiadomień i zamówień
     checkForNewCalls();
     updateOrders();
+
+    document.querySelectorAll('.accept-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const orderId = button.getAttribute('data-order-id');
+            acceptOrder(orderId);
+        });
+    });
+
 </script>
 {% endblock %}
