@@ -53,7 +53,7 @@
                 {% if order.status == "Pending" %}
                     <label for="realization-time-{{ order.id }}">Wpisz czas realizacji (minuty):</label>
                     <input type="number" id="realization-time-{{ order.id }}" min="1" placeholder="np. 15">
-                    <button class="status-btn accept-btn" data-order-id="{{ order.id }}">Przyjmij zamówienie</button>
+                    <button onclick="acceptOrder({{ order.id }})" class="status-btn">Przyjmij zamówienie</button>
 <!--                 {% elif order.status == "Accepted" %}
                     <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
                         <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion({{ order.id }})">Zamówienie zrealizowane</button>
@@ -82,36 +82,6 @@
     // Śledzenie zamówień, które już są wyświetlane
     const displayedOrders = new Set();
 
-
-    function acceptOrder(orderId) {
-        const realizationTimeInput = document.getElementById(`realization-time-${orderId}`);
-        const realizationTime = parseInt(realizationTimeInput.value);
-
-        if (!realizationTime || realizationTime <= 0) {
-            alert("Proszę wprowadzić poprawny czas realizacji w minutach.");
-            return;
-        }
-
-        fetch(`/accept_order/${orderId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ realization_time: realizationTime })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const actionDiv = document.getElementById(`order-action-${orderId}`);
-                if (actionDiv) {
-                    actionDiv.innerHTML = ``;
-                }
-            } else {
-                alert(data.message || "Wystąpił błąd przy aktualizacji zamówienia.");
-            }
-        })
-        .catch(error => console.error("Błąd przy akceptacji zamówienia:", error));
-    }
-
-
     // Dodaj istniejące zamówienia do zbioru displayedOrders
     {% for order in orders %}
         displayedOrders.add({{ order.id }});
@@ -131,155 +101,6 @@
     }
 
     const displayedNotifications = new Set();
-
-
-
-
-
-    function updateOrders() {
-        fetch('/check_new_orders')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Błąd serwera: ${response.status} - ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(orders => {
-                console.log("Otrzymane zamówienia:", orders);
-
-                const ordersDiv = document.getElementById("orders");
-                orders.forEach(order => {
-                    const existingOrderDiv = document.getElementById(`order-${order.order_id}`);
-
-                    // Jeśli zamówienie nie istnieje — dodaj je
-                    if (!existingOrderDiv) {
-                        const orderDiv = document.createElement("div");
-                        orderDiv.classList.add("order");
-                        orderDiv.id = `order-${order.order_id}`;
-
-                        // Generujemy przycisk na podstawie statusu
-                        let buttonHTML;
-                        if (order.status === "Pending") {
-                            buttonHTML = `
-                                <label for="realization-time-${order.order_id}">Wpisz czas realizacji (minuty):</label>
-                                <input type="number" id="realization-time-${order.order_id}" min="1" placeholder="np. 15">
-                                <button class="status-btn accept-btn" data-order-id="${order.order_id}">Przyjmij zamówienie</button>
-                            `;
-                        } else if (order.status === "Ready") {
-                            buttonHTML = `
-                                <form action="/update_order_status/${order.order_id}" method="post">
-                                    <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion(${order.order_id})">Zamówienie zrealizowane</button>
-                                </form>
-                            `;
-                        }
-
-                        let tableInfo = order.table_id 
-                            ? `Stolik nr ${order.table_id}` 
-                            : `<span style="color: red;">Zamówienie online (DOSTAWA)</span>`;
-
-                        let deliveryInfo = "";
-                        if (!order.table_id) {
-                            deliveryInfo = `
-                                <h3 style="color: green;">Dane do dostawy:</h3>
-                                <ul>
-                                    <li><strong>Imię i nazwisko:</strong> ${order.delivery_name}</li>
-                                    <li><strong>Telefon:</strong> ${order.delivery_phone}</li>
-                                    <li><strong>Adres:</strong> ${order.delivery_address}</li>
-                                    <li><strong>Kod pocztowy:</strong> ${order.delivery_postal}</li>
-                                    ${order.delivery_comments ? `<li><strong>Uwagi:</strong> ${order.delivery_comments}</li>` : ""}
-                                </ul>
-                            `;
-                        }
-
-                        orderDiv.innerHTML = generateOrderHTML(order);
-
-                        ordersDiv.appendChild(orderDiv);
-
-                        // 🎵 Dźwięk dla nowego zamówienia
-                        const audio = document.getElementById('newOrderSound');
-                        if (audio) {
-                            audio.play().catch(error => console.log("Audio play error:", error));
-                        }
-
-                    } else {
-                        // 🚀 Zamówienie istnieje — aktualizujemy status i przycisk!
-
-                        // Aktualizacja statusu
-                        const statusElement = existingOrderDiv.querySelector('p');
-                        existingOrderDiv.innerHTML = generateOrderHTML(order);
-
-                    }
-                });
-                document.querySelectorAll('.accept-btn').forEach(button => {
-                    button.addEventListener('click', () => {
-                        const orderId = button.getAttribute('data-order-id');
-                        acceptOrder(orderId);
-                    });
-                });
-
-            })
-            .catch(error => console.error("Błąd przy pobieraniu zamówień:", error));
-    }
-
-
-
-    function generateOrderHTML(order) {
-        let buttonHTML = "";
-        if (order.status === "Pending") {
-            buttonHTML = `
-                <label for="realization-time-${order.order_id}">Wpisz czas realizacji (minuty):</label>
-                <input type="number" id="realization-time-${order.order_id}" min="1" placeholder="np. 15">
-                <button class="status-btn accept-btn" data-order-id="${order.order_id}">Przyjmij zamówienie</button>
-            `;
-        } else if (order.status === "Ready") {
-            buttonHTML = `
-                <form action="/update_order_status/${order.order_id}" method="post">
-                    <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion(${order.order_id})">Zamówienie zrealizowane</button>
-                </form>
-            `;
-        }
-
-        let tableInfo = order.table_id
-            ? `Stolik nr ${order.table_id}`
-            : `<span style="color: red;">Zamówienie online (DOSTAWA)</span>`;
-
-        let deliveryInfo = "";
-        if (!order.table_id) {
-            deliveryInfo = `
-                <h3 style="color: green;">Dane do dostawy:</h3>
-                <ul>
-                    <li><strong>Imię i nazwisko:</strong> ${order.delivery_name}</li>
-                    <li><strong>Telefon:</strong> ${order.delivery_phone}</li>
-                    <li><strong>Adres:</strong> ${order.delivery_address}</li>
-                    <li><strong>Kod pocztowy:</strong> ${order.delivery_postal}</li>
-                    ${order.delivery_comments ? `<li><strong>Uwagi:</strong> ${order.delivery_comments}</li>` : ""}
-                </ul>
-            `;
-        }
-
-        return `
-            <h2>Zamówienie nr ${order.order_number} - ${tableInfo}</h2>
-            <p>Status: ${order.status} <a> id: ${order.order_id}</a></p>
-            <p>Łączna cena: ${order.total_price} PLN</p>
-            <p>Godzina zamówienia: ${order.order_time}</p>
-            ${deliveryInfo}
-            <h3>Szczegóły zamówienia:</h3>
-            <ul>
-                ${order.items.map(item => `
-                    <li>
-                        ${item.name} - Ilość: ${item.quantity} - Cena: ${item.price} PLN
-                        ${item.takeaway ? `<strong>[Na wynos]</strong>` : ""}
-                        ${item.customization ? `<br><em>Personalizacja: ${item.customization}</em>` : ""} <hr>
-                    </li>
-                `).join("")}
-            </ul>
-            <div id="order-action-${order.order_id}">
-                ${buttonHTML}
-            </div>
-        `;
-    }
-
-
 
     function checkForNewCalls() {
         fetch('/check_waiter_calls')
@@ -332,16 +153,175 @@
 
 
 
-    function confirmOrderCompletion(orderId) {
-        const confirmation = confirm("Czy na pewno chcesz oznaczyć zamówienie jako zrealizowane?");
-        if (confirmation) {
-            // Wysyłamy formularz poprzez POST do serwera
-            fetch(`/update_order_status/${orderId}`, {
-                method: "POST"
-            })
-            .catch(error => console.error("Błąd:", error));
-        }
+function confirmOrderCompletion(orderId) {
+    const confirmation = confirm("Czy na pewno chcesz oznaczyć zamówienie jako zrealizowane?");
+    if (confirmation) {
+        // Wysyłamy formularz poprzez POST do serwera
+        fetch(`/update_order_status/${orderId}`, {
+            method: "POST"
+        })
+        .catch(error => console.error("Błąd:", error));
     }
+}
+
+
+
+function updateOrders() {
+    fetch('/check_new_orders')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Błąd serwera: ${response.status} - ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(orders => {
+            console.log("Otrzymane zamówienia:", orders);
+
+            const ordersDiv = document.getElementById("orders");
+            orders.forEach(order => {
+                const existingOrderDiv = document.getElementById(`order-${order.order_id}`);
+
+                // Jeśli zamówienie nie istnieje — dodaj je
+                if (!existingOrderDiv) {
+                    const orderDiv = document.createElement("div");
+                    orderDiv.classList.add("order");
+                    orderDiv.id = `order-${order.order_id}`;
+
+                    // Generujemy przycisk na podstawie statusu
+                    let buttonHTML;
+                    if (order.status === "Pending") {
+                        buttonHTML = `
+                            <label for="realization-time-${order.order_id}">Wpisz czas realizacji (minuty):</label>
+                            <input type="number" id="realization-time-${order.order_id}" min="1" placeholder="np. 15">
+                            <button onclick="acceptOrder(${order.order_id})" class="status-btn">Przyjmij zamówienie</button>
+                        `;
+                    } else if (order.status === "Accepted" || order.status === "In Preparation") {
+                        buttonHTML = `
+                            <form action="/update_order_status/${order.order_id}" method="post">
+                                <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion(${order.order_id})">Zamówienie zrealizowane</button>
+                            </form>
+                        `;
+                    }
+
+                    let tableInfo = order.table_id 
+                        ? `Stolik nr ${order.table_id}` 
+                        : `<span style="color: red;">Zamówienie online (DOSTAWA)</span>`;
+
+                    let deliveryInfo = "";
+                    if (!order.table_id) {
+                        deliveryInfo = `
+                            <h3 style="color: green;">Dane do dostawy:</h3>
+                            <ul>
+                                <li><strong>Imię i nazwisko:</strong> ${order.delivery_name}</li>
+                                <li><strong>Telefon:</strong> ${order.delivery_phone}</li>
+                                <li><strong>Adres:</strong> ${order.delivery_address}</li>
+                                <li><strong>Kod pocztowy:</strong> ${order.delivery_postal}</li>
+                                ${order.delivery_comments ? `<li><strong>Uwagi:</strong> ${order.delivery_comments}</li>` : ""}
+                            </ul>
+                        `;
+                    }
+
+                    orderDiv.innerHTML = `
+                        <h2>Zamówienie nr ${order.order_number} - ${tableInfo}</h2>
+                        <p>Status: ${order.status} <a> id: ${order.order_id}</a></p>
+                        <p>Łączna cena: ${order.total_price} PLN</p>
+                        <p>Godzina zamówienia: ${order.order_time}</p>
+
+                        ${deliveryInfo}
+
+                        <h3>Szczegóły zamówienia:</h3>
+                        <ul>
+                            ${order.items.map(item => `
+                                <li>
+                                    ${item.name} - Ilość: ${item.quantity} - Cena: ${item.price} PLN
+                                    ${item.takeaway ? `<strong>[Na wynos]</strong>` : ""}
+                                    ${item.customization ? `<br><em>Personalizacja: ${item.customization}</em>` : ""} <hr>
+                                </li>
+                            `).join("")}
+                        </ul>
+
+                        <div id="order-action-${order.order_id}">
+                            ${buttonHTML}
+                        </div>
+                    `;
+                    ordersDiv.appendChild(orderDiv);
+
+                    // 🎵 Dźwięk dla nowego zamówienia
+                    const audio = document.getElementById('newOrderSound');
+                    if (audio) {
+                        audio.play().catch(error => console.log("Audio play error:", error));
+                    }
+
+                } else {
+                    // 🚀 Zamówienie istnieje — aktualizujemy status i przycisk!
+
+                    // Aktualizacja statusu
+                    const statusElement = existingOrderDiv.querySelector('p');
+                    if (statusElement) {
+                        statusElement.innerHTML = `Status: ${order.status} <a> id: ${order.order_id}</a>`;
+                    }
+
+                    // Aktualizacja przycisku akcji
+                    const actionDiv = existingOrderDiv.querySelector(`#order-action-${order.order_id}`);
+                    if (actionDiv) {
+                        let buttonHTML;
+                        if (order.status === "Pending") {
+                            buttonHTML = `
+                                <label for="realization-time-${order.order_id}">Wpisz czas realizacji (minuty):</label>
+                                <input type="number" id="realization-time-${order.order_id}" min="1" placeholder="np. 15">
+                                <button onclick="acceptOrder(${order.order_id})" class="status-btn">Przyjmij zamówienie</button>
+                            `;
+                        } else if (order.status === "Accepted" || order.status === "In Preparation" || order.status === "Ready") {
+                            buttonHTML = `
+                                <form action="/update_order_status/${order.order_id}" method="post">
+                                    <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion(${order.order_id})">Zamówienie zrealizowane</button>
+                                </form>
+                            `;
+                        }
+                        actionDiv.innerHTML = buttonHTML;
+                    }
+                }
+            });
+        })
+        .catch(error => console.error("Błąd przy pobieraniu zamówień:", error));
+}
+
+
+
+
+function acceptOrder(orderId) {
+    const realizationTimeInput = document.getElementById(`realization-time-${orderId}`);
+    const realizationTime = parseInt(realizationTimeInput.value);
+
+    if (!realizationTime || realizationTime <= 0) {
+        alert("Proszę wprowadzić poprawny czas realizacji w minutach.");
+        return;
+    }
+
+    fetch(`/accept_order/${orderId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ realization_time: realizationTime })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            
+            const actionDiv = document.getElementById(`order-action-${orderId}`);
+            actionDiv.innerHTML = `
+                <form action="/update_order_status/${orderId}" method="post">
+                    <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion(${orderId})">Zamówienie zrealizowane</button>
+                </form>
+            `;
+        } else {
+            alert(data.message || "Wystąpił błąd przy aktualizacji zamówienia.");
+        }
+    })
+    .catch(error => console.error("Błąd przy akceptacji zamówienia:", error));
+}
+
+
+
 
 
 
@@ -354,17 +334,5 @@
     // Inicjalizacja powiadomień i zamówień
     checkForNewCalls();
     updateOrders();
-
-    document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll('.accept-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const orderId = button.getAttribute('data-order-id');
-                acceptOrder(orderId);
-            });
-        });
-    });
-
-
-
 </script>
 {% endblock %}

@@ -853,17 +853,12 @@ def order_history():
     return render_template('order_history.html', orders=completed_orders)
 
 
-import logging
-logging.basicConfig(level=logging.INFO)
-
 @app.route('/accept_order/<int:order_id>', methods=['POST'])
 def accept_order(order_id):
     data = request.json
     realization_time = data.get('realization_time')
-    logging.info(f"Przyjęto zamówienie {order_id} z czasem realizacji {realization_time} minut.")
 
     if not realization_time or realization_time <= 0:
-        logging.warning("Niepoprawny czas realizacji!")
         return jsonify({"status": "error", "message": "Niepoprawny czas realizacji."}), 400
 
     order = Order.query.get_or_404(order_id)
@@ -871,9 +866,7 @@ def accept_order(order_id):
     order.estimated_completion_time = datetime.utcnow() + timedelta(minutes=realization_time)
     db.session.commit()
 
-    logging.info(f"Zamówienie {order_id} zmienione na 'Accepted'.")
     return jsonify({"status": "success", "message": "Zamówienie przyjęte do realizacji."})
-
 
 
 @app.route('/update_order_status/<int:order_id>', methods=['POST'])
@@ -1189,4 +1182,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(host='0.0.0.0', port=5000)
-    # app.run(debug=True, port=5001)
+    #app.run(debug=True, port=5001)
