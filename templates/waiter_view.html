@@ -54,14 +54,14 @@
                     <label for="realization-time-{{ order.id }}">Wpisz czas realizacji (minuty):</label>
                     <input type="number" id="realization-time-{{ order.id }}" min="1" placeholder="np. 15">
                     <button onclick="acceptOrder({{ order.id }})" class="status-btn">Przyjmij zamówienie</button>
-<!--                 {% elif order.status == "Accepted" %}
+                {% elif order.status == "Accepted" %}
                     <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
                         <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion({{ order.id }})">Zamówienie zrealizowane</button>
                     </form>
                 {% elif order.status == "In Preparation" %}
                     <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
                         <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion({{ order.id }})">Zamówienie zrealizowane</button>
-                    </form> -->
+                    </form>
                 {% elif order.status == "Ready" %}
                     <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
                         <button type="submit" class="status-btn-secondary" onclick="confirmOrderCompletion({{ order.id }})">Zamówienie zrealizowane</button>
