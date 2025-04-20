@@ -197,7 +197,11 @@ function generateOrderHTML(order) {
 
                     let message = call.call_type === "Wezwanie kelnera"
                         ? `Zamówienie nr ${call.order_number}: Wezwanie do stolika nr ${call.table_id} <br> Czas wezwania: ${call.call_time}`
-                        : `Zamówienie nr ${call.order_number}: Prośba o rachunek do stolika nr ${call.table_id} <br> Czas wezwania: ${call.call_time}`;
+                        : `Zamówienie nr ${call.order_number}: Prośba o rachunek do stolika nr ${call.table_id} <br> 
+                           Czas wezwania: ${call.call_time} <br>
+                           Metoda płatności: ${call.payment_method} <br>
+                           ${call.tip > 0 ? `Napiwek: ${call.tip} PLN <br>` : ''}
+                           ${call.nip ? `NIP: ${call.nip}` : ''}`;
 
                     notification.innerHTML = `
                         ${message}

@@ -10,7 +10,7 @@ import qrcode
 import io
 import stripe
 from dotenv import load_dotenv
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from functools import wraps  # Dodaj ten import na początku pliku
 from flask_login import UserMixin
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -102,17 +102,85 @@ def employee_required(f):
 
 
 # Funkcja pomocnicza do generowania QR kodów
-def generate_qr_code(link):
+def generate_qr_code(link, table_id):
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,  # Zwiększona korekcja błędów
+        box_size=20,  # Zwiększona rozdzielczość
         border=4,
     )
     qr.add_data(link)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
-    return img
+    
+    # Konwersja QR kodu do trybu RGBA
+    img = img.convert('RGBA')
+    
+    # Pobranie rozmiaru QR kodu
+    qr_size = img.size[0]
+    
+    # Dodanie logo w środku QR kodu
+    logo = Image.open('static/images/fellas-logo.jpg')
+    
+    # Konwersja logo do trybu RGBA
+    logo = logo.convert('RGBA')
+    
+    # Obliczenie rozmiaru logo proporcjonalnie do rozmiaru modułów QR kodu
+    # Każdy moduł ma 20x20 pikseli, więc logo będzie miało 9 modułów (180x180 pikseli)
+    logo_size = 9 * 20  # 9 modułów * 20 pikseli na moduł
+    
+    # Zmiana rozmiaru logo
+    logo = logo.resize((logo_size, logo_size))
+    
+    # Tworzenie białego obramowania
+    border_size = 20  # 1 moduł = 20 pikseli
+    bordered_logo = Image.new('RGBA', (logo_size + 2*border_size, logo_size + 2*border_size), (255, 255, 255, 255))
+    bordered_logo.paste(logo, (border_size, border_size), logo)
+    
+    # Obliczenie pozycji logo z obramowaniem (środek QR kodu)
+    pos = ((qr_size - (logo_size + 2*border_size)) // 2, (qr_size - (logo_size + 2*border_size)) // 2)
+    
+    # Wklejenie logo z obramowaniem na QR kod z zachowaniem przezroczystości
+    img.paste(bordered_logo, pos, bordered_logo)
+    
+    # Przygotowanie tekstu
+    font_size = 50
+    try:
+        # Próba użycia lokalnej czcionki z projektu
+        font = ImageFont.truetype("static/fonts/arial.ttf", font_size)
+    except:
+        try:
+            # Próba użycia systemowej czcionki jako backup
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+        except:
+            # Jeśli żadna czcionka nie jest dostępna, użyj domyślnej
+            font = ImageFont.load_default()
+    
+    text = f"Zamów do stolika {table_id}"
+    
+    # Obliczenie rozmiaru tekstu z dodatkowym marginesem dla wysokości
+    temp_img = Image.new('RGBA', (1, 1), (255, 255, 255, 0))
+    temp_draw = ImageDraw.Draw(temp_img)
+    text_bbox = temp_draw.textbbox((0, 0), text, font=font)
+    text_width = text_bbox[2] - text_bbox[0]
+    text_height = (text_bbox[3] - text_bbox[1]) + 20  # Dodajemy 20 pikseli do wysokości tekstu
+    
+    # Tworzenie nowego obrazu z miejscem na tekst i QR kod
+    padding = 5  # Mały odstęp między tekstem a QR kodem
+    top_margin = 30  # Dodatkowy górny margines
+    new_height = qr_size + text_height + padding + top_margin
+    new_img = Image.new('RGBA', (qr_size, new_height), (255, 255, 255, 255))
+    
+    # Dodanie tekstu z uwzględnieniem górnego marginesu
+    draw = ImageDraw.Draw(new_img)
+    text_x = (qr_size - text_width) // 2
+    text_y = top_margin + 10  # Dodajemy 10 pikseli do pozycji Y tekstu
+    draw.text((text_x, text_y), text, font=font, fill=(0, 0, 0, 255))
+    
+    # Wklejenie QR kodu pod tekstem
+    new_img.paste(img, (0, text_height + padding + top_margin))
+    
+    return new_img
 
 
 # Modele bazy danych
@@ -223,11 +291,11 @@ def check_location():
     # RESTAURANT_LON = 19.10046215844812
 
     #dom ngw
-    RESTAURANT_LAT = 50.05538783157192
-    RESTAURANT_LON = 21.467076217640532
+    # RESTAURANT_LAT = 50.05538783157192
+    # RESTAURANT_LON = 21.467076217640532
     # Współrzędne restauracji
-    # RESTAURANT_LAT = 50.067694744699786
-    # RESTAURANT_LON = 19.950050897784372
+    RESTAURANT_LAT = 50.06782559094588
+    RESTAURANT_LON = 19.95008308400972 
     MAX_DISTANCE_KM = 0.1  # 100 metrów od restauracji
 
     def haversine(lat1, lon1, lat2, lon2):
@@ -998,7 +1066,7 @@ def add_tables():
 
             # Generowanie linku i QR kodu
             link = url_for('menu', table_id=new_table_id, _external=True)
-            img = generate_qr_code(link)
+            img = generate_qr_code(link, new_table_id)
 
             # Zapis QR kodu do katalogu produkcyjnego
             qr_folder = app.config['UPLOAD_FOLDER']
@@ -1182,4 +1250,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(host='0.0.0.0', port=5000)
-    #app.run(debug=True, port=5001)
+    # app.run(debug=True, port=5001)

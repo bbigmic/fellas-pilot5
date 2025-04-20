@@ -26,6 +26,11 @@
             <img src="{{ url_for('uploaded_file', filename='table_' ~ table.id ~ '.png') }}" 
                  alt="QR Code for Table {{ table.id }}" 
                  class="qr-code">
+            <a href="{{ url_for('uploaded_file', filename='table_' ~ table.id ~ '.png') }}" 
+               download="qr_code_stolik_{{ table.id }}.png"
+               class="download-btn">
+                Pobierz QR kod
+            </a>
             <hr>
         </div>
     {% endfor %}

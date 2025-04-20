@@ -290,3 +290,21 @@ button {
 .checkbox:active ~ .slider::before {
   transform: translate(0);
 }
+
+.download-btn {
+    display: inline-block;
+    background-color: #E10812;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 4px;
+    margin: 10px 0;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+}
+
+.download-btn:hover {
+    background-color: #E67E22;
+    color: white;
+    text-decoration: none;
+}
